@@ -20,9 +20,16 @@
      ══════════════════════════════════════════════════════════ -->
 <div id="screen-profile" class="screen hidden">
   <div class="profile-screen-inner">
-    <div class="app-logo">🍽️</div>
-    <h1 class="app-title">Food Tracker</h1>
-    <p class="profile-subtitle">Who is tracking today?</p>
+    <div class="profile-hero">
+      <svg class="profile-hero-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2.5"/>
+        <circle cx="24" cy="24" r="14" stroke="currentColor" stroke-width="2.5" stroke-dasharray="5 3"/>
+        <circle cx="24" cy="24" r="5" fill="currentColor"/>
+      </svg>
+      <h1 class="profile-app-name">NutriTrack</h1>
+      <p id="profile-date" class="profile-date-label"></p>
+    </div>
+    <p class="profile-select-label">Select profile</p>
     <!-- Profile buttons are injected by app.js from config.js -->
     <div id="profile-buttons" class="profile-buttons"></div>
   </div>
@@ -44,53 +51,55 @@
 
   <main class="today-main">
 
-    <!-- Calorie ring -->
-    <div class="ring-container">
-      <svg class="calorie-ring" viewBox="0 0 220 220" aria-hidden="true">
-        <circle class="ring-track"    cx="110" cy="110" r="90"/>
-        <circle class="ring-fill"  id="ring-progress" cx="110" cy="110" r="90"/>
-      </svg>
-      <div class="ring-center">
-        <div id="ring-kcal"      class="ring-kcal-number">0</div>
-        <div id="ring-goal"      class="ring-goal-text">/ — kcal</div>
-        <div id="ring-remaining" class="ring-remaining">— kcal left</div>
+    <!-- Dark hero: calorie ring + macro pills -->
+    <div class="calorie-hero">
+      <div class="ring-container">
+        <svg class="calorie-ring" viewBox="0 0 220 220" aria-hidden="true">
+          <circle class="ring-track"   cx="110" cy="110" r="90"/>
+          <circle class="ring-fill" id="ring-progress" cx="110" cy="110" r="90"/>
+        </svg>
+        <div class="ring-center">
+          <div id="ring-kcal"      class="ring-kcal-number">0</div>
+          <div id="ring-goal"      class="ring-goal-text">/ — kcal</div>
+          <div id="ring-remaining" class="ring-remaining">— kcal left</div>
+        </div>
       </div>
-    </div>
 
-    <!-- Macro bars: Protein / Carbs / Fat -->
-    <div class="macros-section">
-      <div class="macro-row">
-        <div class="macro-label">Protein</div>
-        <div class="macro-bar-track">
-          <div id="protein-bar-fill" class="macro-bar-fill"></div>
+      <!-- Macro pills: Protein / Carbs / Fat -->
+      <div class="macro-pills">
+        <div class="macro-pill">
+          <div class="macro-pill-label">Protein</div>
+          <div id="protein-value" class="macro-pill-value">0g</div>
+          <div class="macro-pill-bar"><div id="protein-bar-fill" class="macro-pill-fill"></div></div>
         </div>
-        <div id="protein-value" class="macro-value">0/—g</div>
-      </div>
-      <div class="macro-row">
-        <div class="macro-label">Carbs</div>
-        <div class="macro-bar-track">
-          <div id="carbs-bar-fill" class="macro-bar-fill"></div>
+        <div class="macro-pill">
+          <div class="macro-pill-label">Carbs</div>
+          <div id="carbs-value" class="macro-pill-value">0g</div>
+          <div class="macro-pill-bar"><div id="carbs-bar-fill" class="macro-pill-fill"></div></div>
         </div>
-        <div id="carbs-value" class="macro-value">0/—g</div>
-      </div>
-      <div class="macro-row">
-        <div class="macro-label">Fat</div>
-        <div class="macro-bar-track">
-          <div id="fat-bar-fill" class="macro-bar-fill"></div>
+        <div class="macro-pill">
+          <div class="macro-pill-label">Fat</div>
+          <div id="fat-value" class="macro-pill-value">0g</div>
+          <div class="macro-pill-bar"><div id="fat-bar-fill" class="macro-pill-fill"></div></div>
         </div>
-        <div id="fat-value" class="macro-value">0/—g</div>
       </div>
     </div>
 
     <!-- Add food button -->
-    <button id="btn-add-food" class="btn-add-food">
-      <span class="btn-add-icon">＋</span>
-      Add Food
-    </button>
+    <div style="padding: 18px 16px 0;">
+      <button id="btn-add-food" class="btn-add-food">
+        <span class="btn-add-icon">＋</span>
+        Add Food
+      </button>
+    </div>
 
     <!-- Today's log -->
-    <div class="food-log-header">Today's Food</div>
-    <div id="food-log" class="food-log"></div>
+    <div class="log-section">
+      <div class="section-header">
+        <span class="section-title">Today's Log</span>
+      </div>
+      <div id="food-log" class="food-log"></div>
+    </div>
 
   </main>
 
@@ -124,8 +133,14 @@
   </header>
 
   <main class="add-main">
+    <div class="food-search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.8"/><path d="M13 13l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input type="search" id="food-search" class="food-search"
+             placeholder="Search foods…" autocomplete="off" autocorrect="off">
+    </div>
     <!-- Food cards injected by app.js from data/foods.js -->
     <div id="food-grid" class="food-grid"></div>
+    <p id="food-no-results" class="food-no-results hidden">No foods found.</p>
   </main>
 
 </div><!-- /screen-add -->

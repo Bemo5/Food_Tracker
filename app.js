@@ -128,7 +128,7 @@ function updateRing(eaten, goal) {
   ring.style.strokeDashoffset = offset;
 
   const ratio = eaten / goal;
-  ring.style.stroke = ratio >= 1 ? '#C62828' : ratio >= 0.85 ? '#E65100' : '#43A047';
+  ring.style.stroke = ratio >= 1 ? '#EF4444' : ratio >= 0.85 ? '#F59E0B' : '#10B981';
 
   document.getElementById('ring-kcal').textContent  = Math.round(eaten);
   document.getElementById('ring-goal').textContent  = `/ ${goal} kcal`;
@@ -136,11 +136,11 @@ function updateRing(eaten, goal) {
   const remaining = goal - eaten;
   const remEl = document.getElementById('ring-remaining');
   if (remaining >= 0) {
-    remEl.textContent = `${Math.round(remaining)} kcal left`;
-    remEl.style.color = ratio >= 0.85 ? '#E65100' : '#2E7D32';
+    remEl.textContent  = `${Math.round(remaining)} kcal left`;
+    remEl.style.color  = ratio >= 0.85 ? '#F59E0B' : '#10B981';
   } else {
-    remEl.textContent = `${Math.round(-remaining)} kcal over`;
-    remEl.style.color = '#C62828';
+    remEl.textContent  = `${Math.round(-remaining)} kcal over`;
+    remEl.style.color  = '#EF4444';
   }
 }
 
@@ -150,8 +150,8 @@ function updateMacroBar(id, eaten, goal) {
   const val  = document.getElementById(`${id}-value`);
 
   fill.style.width           = `${pct}%`;
-  fill.style.backgroundColor = pct >= 100 ? '#C62828' : pct >= 85 ? '#E65100' : '#43A047';
-  val.textContent             = `${Math.round(eaten)}/${goal}g`;
+  fill.style.backgroundColor = pct >= 100 ? '#EF4444' : pct >= 85 ? '#F59E0B' : '#10B981';
+  val.textContent             = `${Math.round(eaten)}g`;
 }
 
 function renderFoodLog(entries, profileId) {
@@ -163,12 +163,15 @@ function renderFoodLog(entries, profileId) {
 
   container.innerHTML = entries.map((e, i) => {
     const food = getFoodById(e.foodId);
+    const mediaHtml = food && food.photo
+      ? `<img src="${food.photo}" class="log-item-photo" alt="${food.name}">`
+      : `<div class="log-item-emoji">${food ? food.emoji : '🍽️'}</div>`;
     return `
       <div class="log-item">
-        <div class="log-item-emoji">${food ? food.emoji : '🍽️'}</div>
+        ${mediaHtml}
         <div class="log-item-info">
-          <div class="log-item-name">${food ? food.name : e.foodId} (${e.grams}g)</div>
-          <div class="log-item-time">${e.time} &nbsp;·&nbsp; P:${fmt1(e.protein)}g &nbsp;C:${fmt1(e.carbs)}g &nbsp;F:${fmt1(e.fat)}g</div>
+          <div class="log-item-name">${food ? food.name : e.foodId} &middot; ${e.grams}g</div>
+          <div class="log-item-macros">${e.time} &nbsp;·&nbsp; P:${fmt1(e.protein)}g &nbsp;C:${fmt1(e.carbs)}g &nbsp;F:${fmt1(e.fat)}g</div>
         </div>
         <div class="log-item-kcal">${Math.round(e.kcal)}<span>kcal</span></div>
         <button class="log-delete-btn" data-index="${i}" aria-label="Delete">✕</button>
@@ -192,14 +195,18 @@ function renderAddFood() {
   grid.innerHTML = FOODS.map(food => {
     const mediaHtml = food.photo
       ? `<img src="${food.photo}" class="food-card-photo" alt="${food.name}" loading="lazy">`
-      : `<div class="food-card-emoji">${food.emoji}</div>`;
+      : food.emoji;
 
     return `
-      <button class="food-card" data-food-id="${food.id}"
-              style="background-color: ${food.cardColor || '#FFFFFF'}">
-        ${mediaHtml}
-        <div class="food-card-name">${food.name}</div>
-        <div class="food-card-kcal">${food.per100g.kcal} kcal/100g</div>
+      <button class="food-card" data-food-id="${food.id}">
+        <div class="food-card-media" style="--card-bg: ${food.cardColor || '#F9FAF8'};
+             background: ${food.cardColor || '#F9FAF8'}">
+          ${mediaHtml}
+        </div>
+        <div class="food-card-body">
+          <div class="food-card-name">${food.name}</div>
+          <div class="food-card-kcal">${food.per100g.kcal} kcal / 100g</div>
+        </div>
       </button>
     `;
   }).join('');
@@ -207,6 +214,26 @@ function renderAddFood() {
   grid.querySelectorAll('.food-card').forEach(card => {
     card.addEventListener('click', () => openGramsModal(card.dataset.foodId));
   });
+
+  // Wire up search
+  const searchInput = document.getElementById('food-search');
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.addEventListener('input', e => filterFoodGrid(e.target.value.trim().toLowerCase()));
+  }
+}
+
+function filterFoodGrid(query) {
+  const cards   = document.querySelectorAll('.food-card');
+  let visible   = 0;
+  cards.forEach(card => {
+    const name    = card.querySelector('.food-card-name').textContent.toLowerCase();
+    const show    = !query || name.includes(query);
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const noResults = document.getElementById('food-no-results');
+  if (noResults) noResults.classList.toggle('hidden', visible > 0);
 }
 
 
@@ -304,9 +331,9 @@ function renderHistory() {
 
   container.innerHTML = rows.map(row => {
     const pct   = row.goalKcal > 0 ? Math.min(row.totals.kcal / row.goalKcal * 100, 100) : 0;
-    const color = !row.hasData ? '#CCCCCC'
-                : row.totals.kcal >= row.goalKcal ? '#C62828'
-                : '#43A047';
+    const color = !row.hasData ? '#D1D5DB'
+                : row.totals.kcal >= row.goalKcal ? '#EF4444'
+                : '#10B981';
     return `
       <div class="history-item">
         <div class="history-date">${row.label}</div>
@@ -381,13 +408,17 @@ function formatDate(d) {
 // ─── Init ─────────────────────────────────────────────────────
 
 function init() {
+  // Set profile screen date
+  const profileDateEl = document.getElementById('profile-date');
+  if (profileDateEl) profileDateEl.textContent = formatDate(new Date());
+
   // Build profile buttons from config
   const profileBtns = document.getElementById('profile-buttons');
   profileBtns.innerHTML = PROFILES.map(p => `
     <button class="profile-btn" data-profile-id="${p.id}"
             style="--profile-color: ${p.color}">
-      <span class="profile-btn-name">${p.name}</span>
-      <span class="profile-btn-sub">Tap to continue</span>
+      <div class="profile-btn-avatar">${p.name.charAt(0).toUpperCase()}</div>
+      <div class="profile-btn-name">${p.name}</div>
     </button>
   `).join('');
 
