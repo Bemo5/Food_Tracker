@@ -1,25 +1,10 @@
-// ============================================================
-//  PROFILE CONFIGURATION
-//  Edit this file to change profile names and daily goals.
-// ============================================================
+// ── Default goals shown on the onboarding screen ──────────
+// Users set their own values when they first open the app.
+// They can change these anytime in Settings.
 
-const PROFILES = [
-  {
-    id: "mom",
-    name: "Mom",
-    goalKcal: 1600,
-    goalProtein: 70,   // grams/day
-    goalCarbs: 180,    // grams/day
-    goalFat: 55,       // grams/day
-    color: "#B71C1C",  // accent color shown on profile button
-  },
-  {
-    id: "dad",
-    name: "Dad",
-    goalKcal: 2000,
-    goalProtein: 90,
-    goalCarbs: 225,
-    goalFat: 65,
-    color: "#0D47A1",
-  },
-];
+const DEFAULTS = {
+  goalKcal:    1800,
+  goalProtein: 80,
+  goalCarbs:   200,
+  goalFat:     60,
+};
