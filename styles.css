@@ -781,6 +781,135 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
 }
 
 
+/* ── "Add your own" card in food grid ────────────────────── */
+.food-card--new {
+  border: 2px dashed var(--border);
+  background: transparent;
+  box-shadow: none;
+}
+.food-card--new:active { border-color: var(--accent); background: transparent; }
+
+.food-card-media--new {
+  background: transparent !important;
+  color: var(--light);
+}
+.food-card--new .food-card-name { color: var(--muted); }
+.food-card--new .food-card-kcal { color: var(--light); }
+
+/* Custom food card: delete badge */
+.food-card-wrap {
+  position: relative;
+}
+.food-card-del {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.18);
+  color: #fff;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background 0.15s;
+}
+.food-card-del:active { background: var(--red); }
+
+/* ── Custom food creation modal ──────────────────────────── */
+.cf-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+  align-self: flex-start;
+  margin-bottom: 4px;
+}
+
+.cf-name-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  align-items: flex-end;
+}
+
+.cf-emoji-wrap { flex-shrink: 0; }
+.cf-name-wrap  { flex: 1; }
+
+.cf-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.cf-required { color: var(--accent); }
+
+.cf-emoji-input {
+  width: 60px;
+  height: 50px;
+  text-align: center;
+  font-size: 1.5rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  outline: none;
+}
+.cf-emoji-input:focus { border-color: var(--accent); }
+
+.cf-macros-label {
+  align-self: flex-start;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-top: 2px;
+}
+
+.cf-macros-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+
+.cf-macro-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cf-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cf-num-input {
+  flex: 1;
+  height: 46px;
+  padding: 0 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  outline: none;
+  -webkit-appearance: none;
+  text-align: right;
+}
+.cf-num-input:focus { border-color: var(--accent); }
+
+.cf-unit {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  min-width: 26px;
+}
+
 /* ══════════════════════════════════════════════════════════
    HISTORY
    ══════════════════════════════════════════════════════════ */

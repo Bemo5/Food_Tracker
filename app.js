@@ -21,8 +21,31 @@ function saveUser(user) {
 }
 
 function clearAllData() {
-  const keys = Object.keys(localStorage).filter(k => k.startsWith('nt_'));
-  keys.forEach(k => localStorage.removeItem(k));
+  Object.keys(localStorage).filter(k => k.startsWith('nt_')).forEach(k => localStorage.removeItem(k));
+}
+
+
+// ─── Custom foods storage ────────────────────────────────────
+function getCustomFoods() {
+  try { return JSON.parse(localStorage.getItem('nt_custom_foods')) || []; } catch { return []; }
+}
+
+function saveCustomFoods(foods) {
+  localStorage.setItem('nt_custom_foods', JSON.stringify(foods));
+}
+
+function addCustomFood(food) {
+  const foods = getCustomFoods();
+  foods.unshift(food);
+  saveCustomFoods(foods);
+}
+
+function deleteCustomFood(id) {
+  saveCustomFoods(getCustomFoods().filter(f => f.id !== id));
+}
+
+function getAllFoods() {
+  return [...getCustomFoods(), ...FOODS];
 }
 
 
@@ -162,16 +185,48 @@ function renderLog(entries) {
 
 // ─── ADD FOOD ─────────────────────────────────────────────────
 function renderAddFood() {
-  const grid = document.getElementById('food-grid');
-  grid.innerHTML = FOODS.map(food => {
+  const grid        = document.getElementById('food-grid');
+  const customFoods = getCustomFoods();
+
+  // "Add your own" card first
+  const newCard = `
+    <button class="food-card food-card--new" id="btn-create-food">
+      <div class="food-card-media food-card-media--new">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2"/>
+          <path d="M16 9v14M9 16h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="food-card-body">
+        <div class="food-card-name">Add your own</div>
+        <div class="food-card-kcal">Custom food</div>
+      </div>
+    </button>`;
+
+  const customCards = customFoods.map(food => {
+    const media = food.photo
+      ? `<img src="${food.photo}" class="food-card-img" alt="${food.name}" loading="lazy">`
+      : (food.emoji || '🍽️');
+    return `
+      <div class="food-card-wrap">
+        <button class="food-card" data-food-id="${food.id}">
+          <div class="food-card-media" style="background:${food.cardColor || '#EAF0E8'}">${media}</div>
+          <div class="food-card-body">
+            <div class="food-card-name">${food.name}</div>
+            <div class="food-card-kcal">${food.per100g.kcal} kcal / 100g</div>
+          </div>
+        </button>
+        <button class="food-card-del" data-del-id="${food.id}" aria-label="Delete">✕</button>
+      </div>`;
+  }).join('');
+
+  const presetCards = FOODS.map(food => {
     const media = food.photo
       ? `<img src="${food.photo}" class="food-card-img" alt="${food.name}" loading="lazy">`
       : food.emoji;
     return `
       <button class="food-card" data-food-id="${food.id}">
-        <div class="food-card-media" style="background:${food.cardColor || '#F5EFE4'}">
-          ${media}
-        </div>
+        <div class="food-card-media" style="background:${food.cardColor || '#F0F0EE'}">${media}</div>
         <div class="food-card-body">
           <div class="food-card-name">${food.name}</div>
           <div class="food-card-kcal">${food.per100g.kcal} kcal / 100g</div>
@@ -179,8 +234,20 @@ function renderAddFood() {
       </button>`;
   }).join('');
 
-  grid.querySelectorAll('.food-card').forEach(c =>
+  grid.innerHTML = newCard + customCards + presetCards;
+
+  document.getElementById('btn-create-food').addEventListener('click', openCustomFoodModal);
+
+  grid.querySelectorAll('.food-card[data-food-id]').forEach(c =>
     c.addEventListener('click', () => openModal(c.dataset.foodId))
+  );
+
+  grid.querySelectorAll('.food-card-del').forEach(btn =>
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteCustomFood(btn.dataset.delId);
+      renderAddFood();
+    })
   );
 
   const search = document.getElementById('food-search');
@@ -190,12 +257,58 @@ function renderAddFood() {
 
 function filterGrid(q) {
   let n = 0;
-  document.querySelectorAll('.food-card').forEach(c => {
-    const show = !q || c.querySelector('.food-card-name').textContent.toLowerCase().includes(q);
-    c.style.display = show ? '' : 'none';
+  // Each item is either a .food-card or a .food-card-wrap (custom); skip the new-card
+  document.querySelectorAll('#food-grid > .food-card, #food-grid > .food-card-wrap').forEach(el => {
+    const nameEl = el.querySelector('.food-card-name');
+    if (!nameEl) return;
+    const show = !q || nameEl.textContent.toLowerCase().includes(q);
+    el.style.display = show ? '' : 'none';
     if (show) n++;
   });
   document.getElementById('no-results').classList.toggle('hidden', n > 0);
+}
+
+
+// ─── CUSTOM FOOD MODAL ────────────────────────────────────────
+function openCustomFoodModal() {
+  document.getElementById('cf-form').reset();
+  document.getElementById('cf-error').classList.add('hidden');
+  document.getElementById('modal-custom-food').classList.remove('hidden');
+  setTimeout(() => document.getElementById('cf-name').focus(), 60);
+}
+
+function closeCustomFoodModal() {
+  document.getElementById('modal-custom-food').classList.add('hidden');
+}
+
+function handleCustomFoodSubmit(e) {
+  e.preventDefault();
+  const errEl = document.getElementById('cf-error');
+
+  const name  = document.getElementById('cf-name').value.trim();
+  const kcal  = parseFloat(document.getElementById('cf-kcal').value);
+
+  if (!name)          { errEl.textContent = 'Please enter a food name.';          errEl.classList.remove('hidden'); return; }
+  if (!kcal || kcal < 0) { errEl.textContent = 'Please enter calories per 100g.'; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+
+  const emoji   = document.getElementById('cf-emoji').value.trim() || '🍽️';
+  const protein = parseFloat(document.getElementById('cf-protein').value) || 0;
+  const carbs   = parseFloat(document.getElementById('cf-carbs').value)   || 0;
+  const fat     = parseFloat(document.getElementById('cf-fat').value)     || 0;
+
+  addCustomFood({
+    id:        `custom_${Date.now()}`,
+    name,
+    emoji,
+    photo:     null,
+    cardColor: '#EAF0E8',
+    custom:    true,
+    per100g:   { kcal, protein, carbs, fat },
+  });
+
+  closeCustomFoodModal();
+  renderAddFood();
 }
 
 
@@ -327,7 +440,7 @@ function handleOnboardSubmit(e) {
 
 
 // ─── Utilities ───────────────────────────────────────────────
-function getFoodById(id) { return FOODS.find(f => f.id === id) || null; }
+function getFoodById(id) { return getAllFoods().find(f => f.id === id) || null; }
 
 function f1(n) {
   const s = (+n).toFixed(1);
@@ -381,6 +494,13 @@ function init() {
   document.getElementById('modal-confirm').addEventListener('click', confirmModal);
   document.getElementById('modal-grams').addEventListener('click', e => {
     if (e.target === document.getElementById('modal-grams')) closeModal();
+  });
+
+  // Custom food modal
+  document.getElementById('cf-form').addEventListener('submit', handleCustomFoodSubmit);
+  document.getElementById('cf-cancel').addEventListener('click', closeCustomFoodModal);
+  document.getElementById('modal-custom-food').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-custom-food')) closeCustomFoodModal();
   });
 
   // Settings

@@ -2,7 +2,7 @@
 //  Service Worker — caches all app files for offline use
 // ============================================================
 
-const CACHE_NAME = 'nutritrack-v4';
+const CACHE_NAME = 'nutritrack-v5';
 
 const ASSETS_TO_CACHE = [
   './',

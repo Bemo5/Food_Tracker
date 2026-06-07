@@ -356,6 +356,74 @@
 </div>
 
 
+<!-- ══ CREATE CUSTOM FOOD MODAL ══════════════════════════════ -->
+<div id="modal-custom-food" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="cf-title">New Food</div>
+
+    <form id="cf-form" novalidate>
+
+      <!-- Name + emoji row -->
+      <div class="cf-name-row">
+        <div class="cf-emoji-wrap">
+          <label class="cf-label" for="cf-emoji">Emoji</label>
+          <input id="cf-emoji" class="cf-emoji-input" type="text"
+                 placeholder="🍲" maxlength="4" autocorrect="off">
+        </div>
+        <div class="cf-name-wrap">
+          <label class="cf-label" for="cf-name">Food name <span class="cf-required">*</span></label>
+          <input id="cf-name" class="form-input" type="text"
+                 placeholder="e.g. Homemade Soup"
+                 autocorrect="off" autocapitalize="words" maxlength="40">
+        </div>
+      </div>
+
+      <!-- Per 100g macros -->
+      <div class="cf-macros-label">Nutrition per 100g</div>
+      <div class="cf-macros-grid">
+        <div class="cf-macro-group">
+          <label class="cf-label" for="cf-kcal">Calories <span class="cf-required">*</span></label>
+          <div class="cf-input-row">
+            <input id="cf-kcal"    class="cf-num-input" type="number" inputmode="decimal" placeholder="0" min="0">
+            <span class="cf-unit">kcal</span>
+          </div>
+        </div>
+        <div class="cf-macro-group">
+          <label class="cf-label" for="cf-protein">Protein</label>
+          <div class="cf-input-row">
+            <input id="cf-protein" class="cf-num-input" type="number" inputmode="decimal" placeholder="0" min="0">
+            <span class="cf-unit">g</span>
+          </div>
+        </div>
+        <div class="cf-macro-group">
+          <label class="cf-label" for="cf-carbs">Carbs</label>
+          <div class="cf-input-row">
+            <input id="cf-carbs"   class="cf-num-input" type="number" inputmode="decimal" placeholder="0" min="0">
+            <span class="cf-unit">g</span>
+          </div>
+        </div>
+        <div class="cf-macro-group">
+          <label class="cf-label" for="cf-fat">Fat</label>
+          <div class="cf-input-row">
+            <input id="cf-fat"     class="cf-num-input" type="number" inputmode="decimal" placeholder="0" min="0">
+            <span class="cf-unit">g</span>
+          </div>
+        </div>
+      </div>
+
+      <p id="cf-error" class="form-error hidden"></p>
+
+      <div class="modal-actions">
+        <button type="button" id="cf-cancel" class="btn-secondary">Cancel</button>
+        <button type="submit"               class="btn-primary btn-confirm">Save Food</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+
 <script src="config.js"></script>
 <script src="data/foods.js"></script>
 <script src="app.js"></script>
