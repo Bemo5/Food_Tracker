@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1B5E20">
+  <!-- iPhone home-screen / PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Food Tracker">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <title>Food Tracker</title>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     PROFILE PICKER SCREEN
+     ══════════════════════════════════════════════════════════ -->
+<div id="screen-profile" class="screen hidden">
+  <div class="profile-screen-inner">
+    <div class="app-logo">🍽️</div>
+    <h1 class="app-title">Food Tracker</h1>
+    <p class="profile-subtitle">Who is tracking today?</p>
+    <!-- Profile buttons are injected by app.js from config.js -->
+    <div id="profile-buttons" class="profile-buttons"></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     TODAY SCREEN
+     ══════════════════════════════════════════════════════════ -->
+<div id="screen-today" class="screen hidden">
+
+  <header class="top-header">
+    <div class="header-left">
+      <span id="today-profile-name" class="header-profile-name"></span>
+      <button id="switch-profile-link" class="switch-link">Switch</button>
+    </div>
+    <div id="header-date" class="header-date"></div>
+  </header>
+
+  <main class="today-main">
+
+    <!-- Calorie ring -->
+    <div class="ring-container">
+      <svg class="calorie-ring" viewBox="0 0 220 220" aria-hidden="true">
+        <circle class="ring-track"    cx="110" cy="110" r="90"/>
+        <circle class="ring-fill"  id="ring-progress" cx="110" cy="110" r="90"/>
+      </svg>
+      <div class="ring-center">
+        <div id="ring-kcal"      class="ring-kcal-number">0</div>
+        <div id="ring-goal"      class="ring-goal-text">/ — kcal</div>
+        <div id="ring-remaining" class="ring-remaining">— kcal left</div>
+      </div>
+    </div>
+
+    <!-- Macro bars: Protein / Carbs / Fat -->
+    <div class="macros-section">
+      <div class="macro-row">
+        <div class="macro-label">Protein</div>
+        <div class="macro-bar-track">
+          <div id="protein-bar-fill" class="macro-bar-fill"></div>
+        </div>
+        <div id="protein-value" class="macro-value">0/—g</div>
+      </div>
+      <div class="macro-row">
+        <div class="macro-label">Carbs</div>
+        <div class="macro-bar-track">
+          <div id="carbs-bar-fill" class="macro-bar-fill"></div>
+        </div>
+        <div id="carbs-value" class="macro-value">0/—g</div>
+      </div>
+      <div class="macro-row">
+        <div class="macro-label">Fat</div>
+        <div class="macro-bar-track">
+          <div id="fat-bar-fill" class="macro-bar-fill"></div>
+        </div>
+        <div id="fat-value" class="macro-value">0/—g</div>
+      </div>
+    </div>
+
+    <!-- Add food button -->
+    <button id="btn-add-food" class="btn-add-food">
+      <span class="btn-add-icon">＋</span>
+      Add Food
+    </button>
+
+    <!-- Today's log -->
+    <div class="food-log-header">Today's Food</div>
+    <div id="food-log" class="food-log"></div>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-screen="today">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Today</span>
+    </button>
+    <button class="nav-btn" data-screen="history">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">History</span>
+    </button>
+    <button class="nav-btn" data-screen="settings">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">Settings</span>
+    </button>
+  </nav>
+
+</div><!-- /screen-today -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     ADD FOOD SCREEN
+     ══════════════════════════════════════════════════════════ -->
+<div id="screen-add" class="screen hidden">
+
+  <header class="top-header">
+    <button id="btn-add-back" class="back-btn">← Back</button>
+    <h2 class="header-title">Add Food</h2>
+    <div style="width:60px"></div><!-- spacer to center title -->
+  </header>
+
+  <main class="add-main">
+    <!-- Food cards injected by app.js from data/foods.js -->
+    <div id="food-grid" class="food-grid"></div>
+  </main>
+
+</div><!-- /screen-add -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     HISTORY SCREEN
+     ══════════════════════════════════════════════════════════ -->
+<div id="screen-history" class="screen hidden">
+
+  <header class="top-header">
+    <span class="header-title-plain">History</span>
+  </header>
+
+  <main class="history-main">
+    <div id="history-list" class="history-list"></div>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn" data-screen="today">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Today</span>
+    </button>
+    <button class="nav-btn active" data-screen="history">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">History</span>
+    </button>
+    <button class="nav-btn" data-screen="settings">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">Settings</span>
+    </button>
+  </nav>
+
+</div><!-- /screen-history -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SETTINGS SCREEN
+     ══════════════════════════════════════════════════════════ -->
+<div id="screen-settings" class="screen hidden">
+
+  <header class="top-header">
+    <span class="header-title-plain">Settings</span>
+  </header>
+
+  <main class="settings-main">
+
+    <div class="settings-section">
+      <div class="settings-profile-header">
+        Goals for <span id="setting-profile-name"></span>
+      </div>
+
+      <div class="setting-row">
+        <label for="setting-kcal">Daily Calories</label>
+        <div class="setting-input-row">
+          <input type="number" id="setting-kcal" class="setting-input"
+                 min="500" max="5000" inputmode="numeric">
+          <span class="setting-unit">kcal</span>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <label for="setting-protein">Daily Protein</label>
+        <div class="setting-input-row">
+          <input type="number" id="setting-protein" class="setting-input"
+                 min="0" max="500" inputmode="numeric">
+          <span class="setting-unit">g</span>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <label for="setting-carbs">Daily Carbs</label>
+        <div class="setting-input-row">
+          <input type="number" id="setting-carbs" class="setting-input"
+                 min="0" max="1000" inputmode="numeric">
+          <span class="setting-unit">g</span>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <label for="setting-fat">Daily Fat</label>
+        <div class="setting-input-row">
+          <input type="number" id="setting-fat" class="setting-input"
+                 min="0" max="500" inputmode="numeric">
+          <span class="setting-unit">g</span>
+        </div>
+      </div>
+
+      <button id="btn-save-settings" class="btn-primary btn-block">
+        Save Goals
+      </button>
+    </div>
+
+    <div class="settings-section settings-divider">
+      <button id="btn-switch-from-settings" class="btn-secondary btn-block">
+        Switch Profile
+      </button>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn" data-screen="today">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Today</span>
+    </button>
+    <button class="nav-btn" data-screen="history">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">History</span>
+    </button>
+    <button class="nav-btn active" data-screen="settings">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">Settings</span>
+    </button>
+  </nav>
+
+</div><!-- /screen-settings -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     GRAMS MODAL  (slides up from bottom when a food is tapped)
+     ══════════════════════════════════════════════════════════ -->
+<div id="modal-grams" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+
+    <!-- Food image / emoji -->
+    <div id="modal-food-display" class="modal-food-display" aria-hidden="true"></div>
+    <div id="modal-food-name"    class="modal-food-name"></div>
+
+    <!-- Live calorie preview -->
+    <div id="modal-kcal-preview" class="modal-kcal-preview">0 kcal</div>
+
+    <!-- Grams control row: −25g | [input] | +25g -->
+    <div class="grams-control">
+      <button id="btn-grams-minus-25" class="grams-adj-btn">−25g</button>
+      <div class="grams-input-wrap">
+        <input type="number" id="grams-input" class="grams-input"
+               value="100" min="1" max="2000" inputmode="decimal"
+               aria-label="Grams">
+        <span class="grams-label">grams</span>
+      </div>
+      <button id="btn-grams-plus-25" class="grams-adj-btn">+25g</button>
+    </div>
+
+    <!-- Extra quick button -->
+    <button id="btn-grams-plus-50" class="grams-adj-btn-wide">+50g</button>
+
+    <!-- Macro preview text -->
+    <div id="modal-macros-preview" class="modal-macros-preview"></div>
+
+    <!-- Cancel / Add -->
+    <div class="modal-actions">
+      <button id="modal-cancel"  class="btn-secondary">Cancel</button>
+      <button id="modal-confirm" class="btn-primary btn-confirm">Add</button>
+    </div>
+
+  </div>
+</div><!-- /modal-grams -->
+
+
+<script src="config.js"></script>
+<script src="data/foods.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
