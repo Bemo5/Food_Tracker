@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#F5EFE4">
+  <meta name="theme-color" content="#0F5132">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NutriTrack">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
   <link rel="manifest" href="manifest.webmanifest">
@@ -92,50 +92,45 @@
 <!-- ══ TODAY ════════════════════════════════════════════════ -->
 <div id="screen-today" class="screen hidden">
 
-  <header class="top-header">
-    <div>
-      <div id="header-greeting" class="header-greeting"></div>
-      <div id="header-date"     class="header-date"></div>
+  <header class="hero">
+    <div class="hero-top">
+      <div id="header-greeting" class="hero-greeting"></div>
+      <div id="header-date"     class="hero-date"></div>
+    </div>
+
+    <div class="ring-wrap">
+      <svg class="ring-svg" viewBox="0 0 200 200" aria-hidden="true">
+        <circle class="ring-track" cx="100" cy="100" r="82"/>
+        <circle class="ring-fill" id="ring-progress" cx="100" cy="100" r="82"/>
+      </svg>
+      <div class="ring-center">
+        <div id="ring-kcal"      class="ring-num">0</div>
+        <div id="ring-goal-lbl"  class="ring-goal">of —</div>
+        <div id="ring-remaining" class="ring-rem">kcal left</div>
+      </div>
+    </div>
+
+    <div class="macro-row">
+      <div class="macro-pill">
+        <span class="macro-name">Protein</span>
+        <span id="protein-val" class="macro-val">0g</span>
+        <div class="macro-bar"><div id="protein-fill" class="macro-fill"></div></div>
+      </div>
+      <div class="macro-pill">
+        <span class="macro-name">Carbs</span>
+        <span id="carbs-val" class="macro-val">0g</span>
+        <div class="macro-bar"><div id="carbs-fill" class="macro-fill"></div></div>
+      </div>
+      <div class="macro-pill">
+        <span class="macro-name">Fat</span>
+        <span id="fat-val" class="macro-val">0g</span>
+        <div class="macro-bar"><div id="fat-fill" class="macro-fill"></div></div>
+      </div>
     </div>
   </header>
 
   <main class="today-main">
 
-    <!-- Calorie summary card -->
-    <div class="summary-card">
-      <div class="ring-wrap">
-        <svg class="ring-svg" viewBox="0 0 200 200" aria-hidden="true">
-          <circle class="ring-track" cx="100" cy="100" r="82"/>
-          <circle class="ring-fill" id="ring-progress" cx="100" cy="100" r="82"/>
-        </svg>
-        <div class="ring-center">
-          <div id="ring-kcal"      class="ring-num">0</div>
-          <div id="ring-goal-lbl"  class="ring-goal">of —</div>
-          <div id="ring-remaining" class="ring-rem">kcal left</div>
-        </div>
-      </div>
-
-      <!-- Macro pills -->
-      <div class="macro-row">
-        <div class="macro-pill">
-          <span class="macro-name">Protein</span>
-          <span id="protein-val" class="macro-val">0g</span>
-          <div class="macro-bar"><div id="protein-fill" class="macro-fill"></div></div>
-        </div>
-        <div class="macro-pill">
-          <span class="macro-name">Carbs</span>
-          <span id="carbs-val" class="macro-val">0g</span>
-          <div class="macro-bar"><div id="carbs-fill" class="macro-fill"></div></div>
-        </div>
-        <div class="macro-pill">
-          <span class="macro-name">Fat</span>
-          <span id="fat-val" class="macro-val">0g</span>
-          <div class="macro-bar"><div id="fat-fill" class="macro-fill"></div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Add food -->
     <button id="btn-add-food" class="btn-add">
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8"/>
@@ -144,9 +139,15 @@
       Add Food
     </button>
 
+    <!-- Quick add: recently logged foods -->
+    <div id="recents-wrap" class="recents-wrap hidden">
+      <div class="section-label">Quick add</div>
+      <div id="recents-row" class="recents-row"></div>
+    </div>
+
     <!-- Log -->
     <div class="log-wrap">
-      <div class="log-header">Today's log</div>
+      <div class="section-label">Today's log</div>
       <div id="food-log"></div>
     </div>
 
@@ -207,6 +208,7 @@
   </header>
 
   <main class="history-main">
+    <div id="history-avg" class="history-avg hidden"></div>
     <div id="history-list"></div>
   </main>
 
@@ -309,29 +311,34 @@
 </div>
 
 
-<!-- ══ GRAMS MODAL ═══════════════════════════════════════════ -->
+<!-- ══ GRAMS MODAL (add or edit an entry) ════════════════════ -->
 <div id="modal-grams" class="modal hidden" role="dialog" aria-modal="true">
   <div class="modal-sheet">
 
     <div class="modal-handle"></div>
 
-    <div id="modal-media"    class="modal-media"></div>
-    <div id="modal-name"     class="modal-food-name"></div>
-    <div id="modal-kcal-pre" class="modal-kcal-pre">0 kcal</div>
+    <div class="modal-food-row">
+      <div id="modal-media" class="modal-media"></div>
+      <div class="modal-food-info">
+        <div id="modal-name"   class="modal-food-name"></div>
+        <div id="modal-per100" class="modal-per100"></div>
+      </div>
+    </div>
+
+    <div id="modal-kcal-pre"   class="modal-kcal-pre">0 kcal</div>
+    <div id="modal-macros-pre" class="modal-macros-pre"></div>
 
     <div class="grams-row">
-      <button id="btn-minus-25" class="adj-btn">−25g</button>
+      <button id="grams-minus" class="step-btn" aria-label="Less">−</button>
       <div class="grams-field-wrap">
         <input id="grams-input" class="grams-field" type="number"
                value="100" min="1" max="2000" inputmode="decimal" aria-label="Grams">
-        <span class="grams-unit">g</span>
+        <span class="grams-unit">grams</span>
       </div>
-      <button id="btn-plus-25"  class="adj-btn">+25g</button>
+      <button id="grams-plus" class="step-btn" aria-label="More">+</button>
     </div>
 
-    <button id="btn-plus-50" class="adj-btn-wide">+50g</button>
-
-    <div id="modal-macros-pre" class="modal-macros-pre"></div>
+    <div id="portion-presets" class="preset-row"></div>
 
     <div class="modal-actions">
       <button id="modal-cancel"  class="btn-secondary">Cancel</button>
@@ -422,6 +429,10 @@
     </form>
   </div>
 </div>
+
+
+<!-- ══ TOAST ═════════════════════════════════════════════════ -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 
 <script src="config.js"></script>

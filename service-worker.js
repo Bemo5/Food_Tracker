@@ -1,8 +1,11 @@
 // ============================================================
-//  Service Worker — caches all app files for offline use
+//  Service Worker
+//  Core app files: network-first, so deployed updates show up
+//  on the next launch. Cache is the offline fallback.
+//  Images/icons: cache-first (they rarely change).
 // ============================================================
 
-const CACHE_NAME = 'nutritrack-v5';
+const CACHE_NAME = 'nutritrack-v6';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -36,22 +39,36 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch: serve from cache, fall back to network
+function cachePut(request, response) {
+  if (response && response.status === 200 && response.type === 'basic') {
+    const clone = response.clone();
+    caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+  }
+  return response;
+}
+
 self.addEventListener('fetch', event => {
-  // Only handle GET requests for same-origin or relative assets
   if (event.request.method !== 'GET') return;
 
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        // Cache successful responses for local assets
-        if (response && response.status === 200 && response.type === 'basic') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      });
-    })
-  );
+  const url = new URL(event.request.url);
+  const isCore = url.origin === self.location.origin &&
+    (event.request.mode === 'navigate' ||
+     /\.(?:js|css|html|webmanifest)$/.test(url.pathname) ||
+     url.pathname.endsWith('/'));
+
+  if (isCore) {
+    // Network-first: always try to get the freshest app code
+    event.respondWith(
+      fetch(event.request)
+        .then(res => cachePut(event.request, res))
+        .catch(() => caches.match(event.request))
+    );
+  } else {
+    // Cache-first for images and other static media
+    event.respondWith(
+      caches.match(event.request).then(cached =>
+        cached || fetch(event.request).then(res => cachePut(event.request, res))
+      )
+    );
+  }
 });

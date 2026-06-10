@@ -8,6 +8,7 @@ const state = {
   screen:       'onboarding',
   selectedFood: null,
   gramsInput:   100,
+  editIndex:    null,   // index in today's log when editing, else null
 };
 
 
@@ -49,6 +50,17 @@ function getAllFoods() {
 }
 
 
+// ─── Recent foods (for quick add) ────────────────────────────
+function getRecents() {
+  try { return JSON.parse(localStorage.getItem('nt_recents')) || []; } catch { return []; }
+}
+
+function pushRecent(foodId) {
+  const recents = [foodId, ...getRecents().filter(id => id !== foodId)].slice(0, 8);
+  localStorage.setItem('nt_recents', JSON.stringify(recents));
+}
+
+
 // ─── Log storage ─────────────────────────────────────────────
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -83,11 +95,23 @@ function calcTotals(entries) {
 }
 
 
+// ─── Toast ───────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+
 // ─── Routing ─────────────────────────────────────────────────
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById(`screen-${name}`).classList.remove('hidden');
   state.screen = name;
+  window.scrollTo(0, 0);
 
   document.querySelectorAll('.nav-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.screen === name)
@@ -119,26 +143,24 @@ function renderToday() {
   ring.style.strokeDasharray  = C;
   ring.style.strokeDashoffset = C * (1 - fraction);
   const ratio = totals.kcal / user.goalKcal;
-  ring.style.stroke = ratio >= 1 ? '#B54A3A' : ratio >= 0.85 ? '#C4864A' : '#5B7A4E';
+  ring.style.stroke = ratio >= 1 ? '#FF9B85' : ratio >= 0.85 ? '#FFCC80' : '#7BE3A4';
 
   document.getElementById('ring-kcal').textContent     = Math.round(totals.kcal);
-  document.getElementById('ring-goal-lbl').textContent = `of ${user.goalKcal}`;
+  document.getElementById('ring-goal-lbl').textContent = `of ${user.goalKcal} kcal`;
 
   const rem    = user.goalKcal - totals.kcal;
   const remEl  = document.getElementById('ring-remaining');
   remEl.textContent = rem >= 0
-    ? `${Math.round(rem)} kcal left`
-    : `${Math.round(-rem)} kcal over`;
-  remEl.style.color = rem >= 0
-    ? (ratio >= 0.85 ? '#C4864A' : '#5B7A4E')
-    : '#B54A3A';
+    ? `${Math.round(rem)} left`
+    : `${Math.round(-rem)} over`;
+  remEl.classList.toggle('ring-rem--over', rem < 0);
 
   // Macros
   updateMacro('protein', totals.protein, user.goalProtein);
   updateMacro('carbs',   totals.carbs,   user.goalCarbs);
   updateMacro('fat',     totals.fat,     user.goalFat);
 
-  // Log
+  renderRecents();
   renderLog(entries);
 }
 
@@ -147,8 +169,30 @@ function updateMacro(id, eaten, goal) {
   const fill = document.getElementById(`${id}-fill`);
   const val  = document.getElementById(`${id}-val`);
   fill.style.width           = `${pct}%`;
-  fill.style.backgroundColor = pct >= 100 ? '#B54A3A' : pct >= 85 ? '#C4864A' : '#5B7A4E';
+  fill.style.backgroundColor = pct >= 100 ? '#FF9B85' : pct >= 85 ? '#FFCC80' : '#7BE3A4';
   val.textContent            = `${Math.round(eaten)}g`;
+}
+
+function renderRecents() {
+  const wrap = document.getElementById('recents-wrap');
+  const row  = document.getElementById('recents-row');
+  const recents = getRecents()
+    .map(id => getFoodById(id))
+    .filter(Boolean);
+
+  if (!recents.length) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+
+  row.innerHTML = recents.map(food => `
+    <button class="recent-chip" data-food-id="${food.id}">
+      <span class="recent-emoji">${food.photo ? '' : (food.emoji || '🍽️')}</span>
+      <span class="recent-name">${food.name}</span>
+    </button>`
+  ).join('');
+
+  row.querySelectorAll('.recent-chip').forEach(chip =>
+    chip.addEventListener('click', () => openModal(chip.dataset.foodId))
+  );
 }
 
 function renderLog(entries) {
@@ -163,10 +207,10 @@ function renderLog(entries) {
       ? `<img src="${food.photo}" class="log-photo" alt="${food?.name ?? e.foodId}">`
       : `<div class="log-emoji">${food?.emoji ?? '🍽️'}</div>`;
     return `
-      <div class="log-item">
+      <div class="log-item" data-i="${i}" role="button" tabindex="0" aria-label="Edit entry">
         ${media}
         <div class="log-info">
-          <div class="log-name">${food?.name ?? e.foodId} · ${e.grams}g</div>
+          <div class="log-name">${food?.name ?? e.foodId} · ${f1(e.grams)}g</div>
           <div class="log-meta">${e.time} &nbsp;·&nbsp; P:${f1(e.protein)}g C:${f1(e.carbs)}g F:${f1(e.fat)}g</div>
         </div>
         <div class="log-kcal">${Math.round(e.kcal)}<span>kcal</span></div>
@@ -174,8 +218,18 @@ function renderLog(entries) {
       </div>`;
   }).join('');
 
+  // Tap an entry to edit its amount
+  container.querySelectorAll('.log-item').forEach(item =>
+    item.addEventListener('click', () => {
+      const i = +item.dataset.i;
+      const entry = getLog(todayStr())[i];
+      if (entry) openModal(entry.foodId, { editIndex: i, grams: entry.grams });
+    })
+  );
+
   container.querySelectorAll('.log-del').forEach(btn =>
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
       deleteEntry(todayStr(), +btn.dataset.i);
       renderToday();
     })
@@ -309,24 +363,51 @@ function handleCustomFoodSubmit(e) {
 
   closeCustomFoodModal();
   renderAddFood();
+  showToast(`${name} saved`);
 }
 
 
-// ─── GRAMS MODAL ─────────────────────────────────────────────
-function openModal(foodId) {
+// ─── GRAMS MODAL (add or edit) ───────────────────────────────
+function openModal(foodId, opts = {}) {
   const food = getFoodById(foodId);
   if (!food) return;
   state.selectedFood = food;
-  state.gramsInput   = 100;
+  state.editIndex    = opts.editIndex ?? null;
+  state.gramsInput   = opts.grams ?? (food.serving?.grams || 100);
 
   document.getElementById('modal-media').innerHTML = food.photo
     ? `<img src="${food.photo}" class="modal-photo" alt="${food.name}">`
-    : food.emoji;
-  document.getElementById('modal-name').textContent = food.name;
-  document.getElementById('grams-input').value      = 100;
+    : (food.emoji || '🍽️');
+  document.getElementById('modal-name').textContent   = food.name;
+  document.getElementById('modal-per100').textContent = `${food.per100g.kcal} kcal per 100g`;
+  document.getElementById('grams-input').value        = state.gramsInput;
+  document.getElementById('modal-confirm').textContent = state.editIndex !== null ? 'Save' : 'Add';
+
+  renderPresets(food);
   refreshModal();
   document.getElementById('modal-grams').classList.remove('hidden');
-  setTimeout(() => document.getElementById('grams-input').focus(), 60);
+}
+
+// Portion shortcut chips: the food's own serving first, then common weights
+function renderPresets(food) {
+  const presets = [];
+  if (food.serving?.grams) presets.push({ label: food.serving.label, grams: food.serving.grams });
+  [50, 100, 150, 200].forEach(g => {
+    if (!presets.some(p => p.grams === g)) presets.push({ label: `${g}g`, grams: g });
+  });
+
+  const row = document.getElementById('portion-presets');
+  row.innerHTML = presets.map(p =>
+    `<button class="preset-chip" data-grams="${p.grams}">${p.label}</button>`
+  ).join('');
+
+  row.querySelectorAll('.preset-chip').forEach(chip =>
+    chip.addEventListener('click', () => {
+      state.gramsInput = +chip.dataset.grams;
+      document.getElementById('grams-input').value = state.gramsInput;
+      refreshModal();
+    })
+  );
 }
 
 function refreshModal() {
@@ -335,11 +416,16 @@ function refreshModal() {
   const f    = g / 100;
   document.getElementById('modal-kcal-pre').textContent   = `${Math.round(food.per100g.kcal * f)} kcal`;
   document.getElementById('modal-macros-pre').textContent =
-    `Protein: ${f1(food.per100g.protein * f)}g · Carbs: ${f1(food.per100g.carbs * f)}g · Fat: ${f1(food.per100g.fat * f)}g`;
+    `Protein ${f1(food.per100g.protein * f)}g · Carbs ${f1(food.per100g.carbs * f)}g · Fat ${f1(food.per100g.fat * f)}g`;
+
+  // Highlight the matching preset chip
+  document.querySelectorAll('#portion-presets .preset-chip').forEach(chip =>
+    chip.classList.toggle('active', +chip.dataset.grams === g)
+  );
 }
 
 function adjustGrams(delta) {
-  state.gramsInput = Math.max(0, (state.gramsInput || 0) + delta);
+  state.gramsInput = Math.max(5, Math.round((state.gramsInput || 0) + delta));
   document.getElementById('grams-input').value = state.gramsInput;
   refreshModal();
 }
@@ -348,16 +434,28 @@ function confirmModal() {
   const food = state.selectedFood;
   const g    = Math.max(1, state.gramsInput);
   const f    = g / 100;
-  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  addEntry(todayStr(), {
-    foodId:  food.id,
-    grams:   g,
+  const macros = {
     kcal:    food.per100g.kcal    * f,
     protein: food.per100g.protein * f,
     carbs:   food.per100g.carbs   * f,
     fat:     food.per100g.fat     * f,
-    time,
-  });
+  };
+
+  if (state.editIndex !== null) {
+    const log = getLog(todayStr());
+    const entry = log[state.editIndex];
+    if (entry) {
+      Object.assign(entry, macros, { grams: g });
+      saveLog(todayStr(), log);
+      showToast(`${food.name} updated`);
+    }
+  } else {
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    addEntry(todayStr(), { foodId: food.id, grams: g, ...macros, time });
+    pushRecent(food.id);
+    showToast(`${food.name} · ${Math.round(macros.kcal)} kcal added`);
+  }
+
   closeModal();
   showScreen('today');
 }
@@ -365,6 +463,7 @@ function confirmModal() {
 function closeModal() {
   document.getElementById('modal-grams').classList.add('hidden');
   state.selectedFood = null;
+  state.editIndex    = null;
 }
 
 
@@ -372,28 +471,70 @@ function closeModal() {
 function renderHistory() {
   const user = getUser();
   const list = document.getElementById('history-list');
-  list.innerHTML = Array.from({ length: 7 }, (_, i) => {
-    const d       = new Date();
+
+  const days = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
     d.setDate(d.getDate() - i);
     const dStr    = d.toISOString().slice(0, 10);
     const entries = getLog(dStr);
-    const totals  = calcTotals(entries);
+    return { i, d, dStr, entries, totals: calcTotals(entries) };
+  });
+
+  // 7-day average over days that have data
+  const week = days.slice(0, 7).filter(day => day.entries.length);
+  const avgEl = document.getElementById('history-avg');
+  if (week.length >= 2) {
+    const avg = week.reduce((s, day) => s + day.totals.kcal, 0) / week.length;
+    avgEl.innerHTML = `7-day average: <strong>${Math.round(avg)} kcal</strong> / day`;
+    avgEl.classList.remove('hidden');
+  } else {
+    avgEl.classList.add('hidden');
+  }
+
+  list.innerHTML = days.map(({ i, d, dStr, entries, totals }) => {
     const hasData = entries.length > 0;
     const label   = i === 0 ? 'Today' : i === 1 ? 'Yesterday'
                   : d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
     const pct     = hasData ? Math.min(totals.kcal / user.goalKcal * 100, 100) : 0;
-    const color   = !hasData ? '#D6CCBF'
-                  : totals.kcal >= user.goalKcal ? '#B54A3A'
-                  : '#5B7A4E';
-    return `
-      <div class="history-item">
-        <div class="history-date">${label}</div>
-        <div class="history-bar-track">
-          <div class="history-bar-fill" style="width:${hasData ? Math.max(pct,1) : 0}%;background:${color}"></div>
+    const over    = totals.kcal >= user.goalKcal;
+
+    const detail = !hasData ? '' : `
+      <div class="history-detail hidden">
+        ${entries.map(e => {
+          const food = getFoodById(e.foodId);
+          return `
+            <div class="history-entry">
+              <span class="history-entry-emoji">${food?.emoji ?? '🍽️'}</span>
+              <span class="history-entry-name">${food?.name ?? e.foodId} · ${f1(e.grams)}g</span>
+              <span class="history-entry-kcal">${Math.round(e.kcal)} kcal</span>
+            </div>`;
+        }).join('')}
+        <div class="history-detail-totals">
+          P ${f1(totals.protein)}g · C ${f1(totals.carbs)}g · F ${f1(totals.fat)}g
         </div>
-        <div class="history-kcal">${hasData ? Math.round(totals.kcal) + ' kcal' : '—'}</div>
+      </div>`;
+
+    return `
+      <div class="history-item ${hasData ? 'history-item--tappable' : ''}" data-date="${dStr}">
+        <div class="history-row">
+          <div class="history-date">${label}</div>
+          <div class="history-kcal">${hasData ? Math.round(totals.kcal) + ' kcal' : '—'}</div>
+        </div>
+        <div class="history-bar-track">
+          <div class="history-bar-fill ${over ? 'history-bar-fill--over' : ''}"
+               style="width:${hasData ? Math.max(pct, 2) : 0}%"></div>
+        </div>
+        ${detail}
       </div>`;
   }).join('');
+
+  // Tap a day to expand its log
+  list.querySelectorAll('.history-item--tappable').forEach(item =>
+    item.addEventListener('click', () => {
+      const detail = item.querySelector('.history-detail');
+      if (detail) detail.classList.toggle('hidden');
+    })
+  );
 }
 
 
@@ -415,7 +556,7 @@ function saveSettings() {
   u.goalCarbs   = posInt('s-carbs',   u.goalCarbs);
   u.goalFat     = posInt('s-fat',     u.goalFat);
   saveUser(u);
-  showScreen('today');
+  showToast('Changes saved');
 }
 
 
@@ -484,12 +625,11 @@ function init() {
 
   // Grams modal
   document.getElementById('grams-input').addEventListener('input', e => {
-    state.gramsInput = parseInt(e.target.value) || 0;
+    state.gramsInput = parseFloat(e.target.value) || 0;
     refreshModal();
   });
-  document.getElementById('btn-minus-25').addEventListener('click', () => adjustGrams(-25));
-  document.getElementById('btn-plus-25').addEventListener('click',  () => adjustGrams(+25));
-  document.getElementById('btn-plus-50').addEventListener('click',  () => adjustGrams(+50));
+  document.getElementById('grams-minus').addEventListener('click', () => adjustGrams(-10));
+  document.getElementById('grams-plus').addEventListener('click',  () => adjustGrams(+10));
   document.getElementById('modal-cancel').addEventListener('click',  closeModal);
   document.getElementById('modal-confirm').addEventListener('click', confirmModal);
   document.getElementById('modal-grams').addEventListener('click', e => {

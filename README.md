@@ -9,10 +9,13 @@ browser — no server, no login. Works offline and installs on iPhone from Safar
 
 1. Open the link (see *Deploy* below) in Safari on the iPhone.
 2. Tap **Share → Add to Home Screen** to install it as an app icon.
-3. Pick a profile (Mom or Dad) — that choice is remembered on that phone.
-4. Tap **Add Food**, pick a food photo, enter the grams eaten, tap **Add**.
-5. Calories update instantly. Progress ring turns amber when close to goal,
-   red when over.
+3. Enter your name and daily calorie goal — remembered on that phone.
+4. Tap **Add Food**, pick a food, choose a portion (e.g. "1 egg") or
+   adjust the grams, tap **Add**.
+5. Calories update instantly. Recently used foods appear under
+   **Quick add** on the Today screen. Tap any logged item to edit its
+   amount, or ✕ to delete it. Tap a day in **History** to see what
+   was eaten.
 
 ---
 
@@ -29,6 +32,7 @@ browser — no server, no login. Works offline and installs on iPhone from Safar
   emoji:      "🌾",             // shown when no photo
   photo:      null,             // or: "images/foods/oats.jpg"
   cardColor:  "#FFFDE7",        // background color of the card (optional, any light color)
+  serving:    { label: "1 cup", grams: 80 },   // optional portion shortcut
   per100g: {
     kcal:    389,
     protein: 17,
@@ -49,15 +53,17 @@ browser — no server, no login. Works offline and installs on iPhone from Safar
 
 ## Changing daily goals
 
-**Quick way (in the app):** Tap ⚙️ Settings → change numbers → Save Goals.  
-Note: goals set in-app are saved per device. If you want to change the default
-that appears on a fresh phone, edit `config.js`:
+**Quick way (in the app):** Tap ⚙️ Settings → change numbers → Save Changes.  
+Note: goals set in-app are saved per device. If you want to change the defaults
+shown on the onboarding screen of a fresh phone, edit `config.js`:
 
 ```js
-const PROFILES = [
-  { id: "mom", name: "Mom", goalKcal: 1600, goalProtein: 70, goalCarbs: 180, goalFat: 55, color: "#B71C1C" },
-  { id: "dad", name: "Dad", goalKcal: 2000, goalProtein: 90, goalCarbs: 225, goalFat: 65, color: "#0D47A1" },
-];
+const DEFAULTS = {
+  goalKcal:    1800,
+  goalProtein: 80,
+  goalCarbs:   200,
+  goalFat:     60,
+};
 ```
 
 ---
@@ -78,7 +84,7 @@ After the first load, the app works **offline** too (service worker caches every
 ## Data & privacy
 
 All data is stored **only on the device** using browser localStorage.  
-Nothing is ever sent to a server. Mom's phone has Mom's data; Dad's phone has Dad's.
+Nothing is ever sent to a server — each phone keeps its own data.
 
 ---
 
